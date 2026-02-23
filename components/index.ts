@@ -4,6 +4,8 @@ import StarRating from "./StarRating";
 import MaskedDateInput from "./MaskedDateInput";
 import ImageWithPlaceholder from "./ImageWithPlaceholder";
 import ProgressBar from "./ProgressBar";
+import SearchFilterBar from "./SearchFilterBar";
+import FormModal from "./FormModal";
 
 export {
     Loading,
@@ -12,4 +14,6 @@ export {
     MaskedDateInput,
     ImageWithPlaceholder,
     ProgressBar,
+    SearchFilterBar,
+    FormModal,
 };
