@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../js/supabase";
 import { useAlert } from "../contexts/AlertContext";
+import { traduzirErro } from "../js/tradutor";
 import style from "../js/style";
 
 const Login = () => {
@@ -43,12 +44,12 @@ const Login = () => {
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim().toLowerCase(),
       password: senha,
     });
 
     if (error) {
-      alert(error.message);
+      alert(traduzirErro(error.message));
       return;
     }
 
@@ -78,10 +79,11 @@ const Login = () => {
             <Text style={style.inputLabel}>Email:</Text>
             <TextInput
               placeholder="Email"
-              onChangeText={(texto) => setEmail(texto)}
+              onChangeText={(texto) => setEmail(texto.trim().toLowerCase())}
               style={style.input}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
             />
           </View>
 

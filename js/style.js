@@ -150,28 +150,58 @@ export default StyleSheet.create({
 
     //FLATLIST
     item: {
-        alignItems: "justify",
-        justifyContent: "space-between",
-        backgroundColor: " rgba(173, 126, 148, 0.3)",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(173, 126, 148, 0.3)",
         borderRadius: 10,
-        padding: 12,
+        padding: 16,
         marginVertical: 12,
-        width: "80%",
+        width: "90%",
         borderColor: "#CD9CB2",
         borderWidth: 2,
+    },
+    itemContent: {
+        width: "100%",
     },
     titulo: {
         fontSize: 17,
         color: "#8F6277",
         marginBottom: 10,
         flexWrap: "wrap",
-        textAlign: "justify",
+        textAlign: "left",
+        width: "100%",
     },
     imagem: {
         width: 150,
         height: 150,
         borderRadius: 8,
         marginTop: 15,
+        alignSelf: "center",
+    },
+    itemActions: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 15,
+        gap: 20,
+    },
+    actionButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        gap: 6,
+    },
+    editButton: {
+        backgroundColor: "#8F6277",
+    },
+    deleteButton: {
+        backgroundColor: "#D64550",
+    },
+    actionButtonText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "600",
     },
     imagemView: {
         alignContent: "center",

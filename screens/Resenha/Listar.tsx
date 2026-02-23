@@ -5,7 +5,7 @@ import { Resenha } from "../../model/Resenha";
 import style from "../../js/style";
 import { ScrollView } from "react-native-gesture-handler";
 import { Filme } from "../../model/Filme";
-import { Loading } from "../../components";
+import { Loading, StarRating } from "../../components";
 
 const Listar = () => {
     const [loading, setLoading] = useState(true);
@@ -115,7 +115,13 @@ const Listar = () => {
                         <Text style={style.titulo}>Filme: {filmes.find((f) => f.id === item.idFilme)?.titulo || "N/A"}</Text>
                         <Text style={style.titulo}>Título: {item.titulo}</Text>
                         <Text style={style.titulo}>Texto: {item.texto}</Text>
-                        <Text style={style.titulo}>Estrelas: {"⭐".repeat(item.estrelas || 0)}</Text>
+                        <View style={{ marginTop: 10 }}>
+                            <StarRating
+                                rating={item.estrelas || 0}
+                                size={24}
+                                disabled={true}
+                            />
+                        </View>
                     </View>
                 ))
             )}

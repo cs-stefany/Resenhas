@@ -4,12 +4,14 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../js/supabase";
 import { useAlert } from "../contexts/AlertContext";
+import { traduzirErro } from "../js/tradutor";
 import { Usuario } from "../model/Usuario";
+import { MaskedDateInput } from "../components";
 import style from "../js/style";
 
 const Registro = () => {
     const [formUsuario, setFormUsuario] = useState<Partial<Usuario>>({});
-    const { alert } = useAlert();
+    const { alert, showAlert } = useAlert();
 
     const navigation = useNavigation();
 
@@ -42,7 +44,7 @@ const Registro = () => {
         });
 
         if (error) {
-            alert(error.message);
+            alert(traduzirErro(error.message));
             return;
         }
 
@@ -59,7 +61,21 @@ const Registro = () => {
                 console.log("Erro ao atualizar perfil:", profileError.message);
             }
 
-            alert("Conta criada com sucesso!");
+            // Mostra modal de sucesso com instruções
+            showAlert({
+                title: "Cadastro realizado!",
+                message: "Enviamos um link de confirmação para o seu email.\n\nPor favor, acesse sua caixa de entrada e clique no link para ativar sua conta antes de fazer login.",
+                buttons: [
+                    {
+                        text: "Ir para Login",
+                        style: "default",
+                        onPress: () => navigation.navigate("Login" as never),
+                    },
+                ],
+            });
+
+            // Limpa o formulário
+            setFormUsuario({});
         }
     };
 
@@ -83,6 +99,7 @@ const Registro = () => {
                         <Text style={style.inputLabel}>Nome:</Text>
                         <TextInput
                             placeholder="Nome"
+                            value={formUsuario.nome || ''}
                             onChangeText={(texto) =>
                                 setFormUsuario({
                                     ...formUsuario,
@@ -96,12 +113,14 @@ const Registro = () => {
                         <Text style={style.inputLabel}>E-mail:</Text>
                         <TextInput
                             placeholder="Email"
+                            value={formUsuario.email || ''}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            autoCorrect={false}
                             onChangeText={(texto) =>
                                 setFormUsuario({
                                     ...formUsuario,
-                                    email: texto,
+                                    email: texto.trim().toLowerCase(),
                                 })
                             }
                             style={style.input}
@@ -111,6 +130,7 @@ const Registro = () => {
                         <Text style={style.inputLabel}>Senha:</Text>
                         <TextInput
                             placeholder="Senha (mínimo 6 caracteres)"
+                            value={formUsuario.senha || ''}
                             onChangeText={(texto) =>
                                 setFormUsuario({
                                     ...formUsuario,
@@ -123,15 +143,15 @@ const Registro = () => {
                     </View>
                     <View style={style.distancia}>
                         <Text style={style.inputLabel}>Data de Nascimento:</Text>
-                        <TextInput
-                            placeholder="DD/MM/AAAA"
+                        <MaskedDateInput
+                            value={formUsuario.datanasc || ''}
                             onChangeText={(texto) =>
                                 setFormUsuario({
                                     ...formUsuario,
                                     datanasc: texto,
                                 })
                             }
-                            style={style.input}
+                            placeholder="DD/MM/AAAA"
                         />
                     </View>
                 </View>
@@ -139,6 +159,14 @@ const Registro = () => {
                     <TouchableOpacity style={style.button} onPress={handleSignUp}>
                         <Text style={style.buttonText}>Registrar</Text>
                     </TouchableOpacity>
+
+                    <Text
+                        style={style.registerText}
+                        onPress={() => navigation.navigate("Login" as never)}
+                    >
+                        Já tem uma conta?{" "}
+                        <Text style={style.registerLink}>Fazer login</Text>
+                    </Text>
                 </View>
             </View>
         </KeyboardAwareScrollView>

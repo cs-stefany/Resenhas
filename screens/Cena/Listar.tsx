@@ -1,11 +1,11 @@
-import { View, Text, Image, ImageStyle } from "react-native";
+import { View, Text, ImageStyle } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../js/supabase";
 import { Cena } from "../../model/Cena";
 import style from "../../js/style";
 import { ScrollView } from "react-native-gesture-handler";
 import { Filme } from "../../model/Filme";
-import { Loading } from "../../components";
+import { Loading, ImageWithPlaceholder, StarRating } from "../../components";
 
 const Listar = () => {
     const [loading, setLoading] = useState(true);
@@ -115,8 +115,14 @@ const Listar = () => {
                         <Text style={style.titulo}>Titulo: {item.titulo}</Text>
                         <Text style={style.titulo}>Descrição: {item.descricao}</Text>
                         <Text style={style.titulo}>Observação: {item.observacao}</Text>
-                        <Text style={style.titulo}>Estrelas: {"⭐".repeat(item.estrelas || 0)}</Text>
-                        <Image source={{ uri: item.urlfoto }} style={style.imagem as ImageStyle} />
+                        <View style={{ marginVertical: 10 }}>
+                            <StarRating
+                                rating={item.estrelas || 0}
+                                size={24}
+                                disabled={true}
+                            />
+                        </View>
+                        <ImageWithPlaceholder uri={item.urlfoto || ''} style={style.imagem as ImageStyle} />
                     </View>
                 ))
             )}

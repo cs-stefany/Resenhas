@@ -1,24 +1,31 @@
-import { View, Text, TextInput, TouchableOpacity, Pressable, Image, ImageStyle, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Pressable, ImageStyle } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { supabase } from "../../js/supabase";
 import { uploadImage } from "../../js/uploadImage";
 import { useAlert } from "../../contexts/AlertContext";
 import React, { useEffect, useState } from "react";
 import Picker from "react-native-picker-select";
+import { Ionicons } from "@expo/vector-icons";
 import { Filme } from "../../model/Filme";
 import style from "../../js/style";
 import * as ImagePicker from "expo-image-picker";
 import { Cena } from "../../model/Cena";
-import { Loading } from "../../components";
+import {
+    Loading,
+    StarRating,
+    ImageWithPlaceholder,
+    ProgressBar,
+} from "../../components";
 
 const Manter = () => {
-    const [formCena, setFormCena] = useState<Partial<Cena>>({ idFilme: "0" });
+    const [formCena, setFormCena] = useState<Partial<Cena>>({ idFilme: "0", estrelas: 0 });
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [userId, setUserId] = useState<string | null>(null);
     const [cenas, setCenas] = useState<Cena[]>([]);
     const [filmes, setFilmes] = useState<Filme[]>([]);
     const [imagePath, setImagePath] = useState("https://cdn-icons-png.flaticon.com/512/723/723082.png");
-    const [uploading, setUploading] = useState(false);
 
     const { alert, showAlert, confirmDelete } = useAlert();
 
@@ -182,7 +189,7 @@ const Manter = () => {
     };
 
     const Limpar = () => {
-        setFormCena({ idFilme: "0" });
+        setFormCena({ idFilme: "0", estrelas: 0 });
         setImagePath("https://cdn-icons-png.flaticon.com/512/723/723082.png");
     };
 
@@ -230,16 +237,23 @@ const Manter = () => {
     };
 
     const enviaFoto = async (asset: ImagePicker.ImagePickerAsset) => {
-        if (!userId) return;
+        if (!userId || !asset.uri) {
+            alert("Erro: não foi possível processar a imagem.");
+            return;
+        }
 
-        setImagePath(asset.uri);
         setUploading(true);
+        setUploadProgress(0);
+        setImagePath(asset.uri);
 
-        const { url, error } = await uploadImage(asset.uri, userId);
+        const { url, error } = await uploadImage(asset.uri, userId, {
+            onProgress: (progress) => setUploadProgress(progress),
+        });
 
         if (error) {
             alert('Erro ao enviar imagem: ' + error);
             setUploading(false);
+            setUploadProgress(0);
             return;
         }
 
@@ -248,6 +262,7 @@ const Manter = () => {
         }
 
         setUploading(false);
+        setUploadProgress(0);
     };
 
     if (loading) {
@@ -295,7 +310,7 @@ const Manter = () => {
             showsVerticalScrollIndicator={false}
         >
             {filmes.length === 0 ? (
-                <View style={{ padding: 40, alignItems: 'center' }}>
+                <View style={{ padding: 40, alignItems: 'center', marginTop: 50 }}>
                     <Text style={style.textNews}>Nenhum filme cadastrado.</Text>
                     <Text style={[style.textNews, { marginTop: 10 }]}>Cadastre um filme primeiro para adicionar cenas.</Text>
                 </View>
@@ -304,10 +319,12 @@ const Manter = () => {
                     <View style={style.inputContainer}>
                         <Pressable onPress={() => selecionaFoto()} disabled={uploading}>
                             <View style={style.imagemView}>
-                                {uploading ? (
-                                    <ActivityIndicator size="large" color="#8F6277" />
-                                ) : (
-                                    <Image source={{ uri: imagePath }} style={style.imagem as ImageStyle} />
+                                <ImageWithPlaceholder
+                                    uri={imagePath}
+                                    style={style.imagem as ImageStyle}
+                                />
+                                {uploading && (
+                                    <ProgressBar progress={uploadProgress} />
                                 )}
                             </View>
                         </Pressable>
@@ -333,7 +350,7 @@ const Manter = () => {
                         <View style={style.distancia}>
                             <TextInput
                                 placeholder="Título *"
-                                value={formCena.titulo}
+                                value={formCena.titulo || ''}
                                 onChangeText={(texto) =>
                                     setFormCena({
                                         ...formCena,
@@ -346,20 +363,21 @@ const Manter = () => {
                         <View style={style.distancia}>
                             <TextInput
                                 placeholder="Descrição *"
-                                value={formCena.descricao}
+                                value={formCena.descricao || ''}
                                 onChangeText={(texto) =>
                                     setFormCena({
                                         ...formCena,
                                         descricao: texto,
                                     })
                                 }
-                                style={style.input}
+                                style={[style.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                                multiline
                             />
                         </View>
                         <View style={style.distancia}>
                             <TextInput
                                 placeholder="Observação"
-                                value={formCena.observacao}
+                                value={formCena.observacao || ''}
                                 onChangeText={(texto) =>
                                     setFormCena({
                                         ...formCena,
@@ -369,19 +387,19 @@ const Manter = () => {
                                 style={style.input}
                             />
                         </View>
-                        <View style={style.distancia}>
-                            <TextInput
-                                placeholder="Estrelas (0-5)"
-                                keyboardType="numeric"
-                                value={(formCena.estrelas || 0).toString()}
-                                onChangeText={(texto) => {
-                                    const num = parseInt(texto) || 0;
+                        <View style={[style.distancia, { alignItems: 'center' }]}>
+                            <Text style={{ color: '#8F6277', marginBottom: 10, fontWeight: '600' }}>
+                                Avaliação:
+                            </Text>
+                            <StarRating
+                                rating={formCena.estrelas || 0}
+                                onRatingChange={(rating) =>
                                     setFormCena({
                                         ...formCena,
-                                        estrelas: Math.min(5, Math.max(0, num)),
-                                    });
-                                }}
-                                style={style.input}
+                                        estrelas: rating,
+                                    })
+                                }
+                                size={36}
                             />
                         </View>
                     </View>
@@ -390,7 +408,7 @@ const Manter = () => {
                             <Text style={style.buttonOutlineText}>Limpar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={style.buttonSave} onPress={Salvar} disabled={uploading}>
-                            <Text style={style.buttonText}>{uploading ? 'Aguarde...' : 'Salvar'}</Text>
+                            <Text style={style.buttonText}>{uploading ? 'Enviando...' : 'Salvar'}</Text>
                         </TouchableOpacity>
                     </View>
                 </>
@@ -398,25 +416,46 @@ const Manter = () => {
 
             {cenas.length > 0 && (
                 <View>
-                    <Text style={style.textNews}>Clique para editar ou</Text>
-                    <Text style={[style.textNews, { marginBottom: 40 }]}>pressione para excluir</Text>
+                    <Text style={[style.textNews, { marginBottom: 20 }]}>Cenas cadastradas</Text>
                 </View>
             )}
 
-            {cenas.map((item, i) => (
-                <TouchableOpacity
-                    key={i}
-                    style={style.item}
-                    onPress={() => editar(item)}
-                    onLongPress={() => excluir(item)}
-                >
-                    <Text style={style.titulo}>Filme: {filmes.find((f) => f.id === item.idFilme)?.titulo || ""}</Text>
-                    <Text style={style.titulo}>Título: {item.titulo}</Text>
-                    <Text style={style.titulo}>Descrição: {item.descricao}</Text>
-                    <Text style={style.titulo}>Observação: {item.observacao}</Text>
-                    <Text style={style.titulo}>Estrelas: {"⭐".repeat(item.estrelas || 0)}</Text>
-                    <Image source={{ uri: item.urlfoto }} style={style.imagem as ImageStyle} />
-                </TouchableOpacity>
+            {cenas.map((item) => (
+                <View key={item.id} style={style.item}>
+                    <View style={style.itemContent}>
+                        <Text style={style.titulo}>Filme: {filmes.find((f) => f.id === item.idFilme)?.titulo || "N/A"}</Text>
+                        <Text style={style.titulo}>Título: {item.titulo}</Text>
+                        <Text style={style.titulo}>Descrição: {item.descricao}</Text>
+                        <Text style={style.titulo}>Observação: {item.observacao}</Text>
+                    </View>
+                    <View style={{ marginTop: 10 }}>
+                        <StarRating
+                            rating={item.estrelas || 0}
+                            size={24}
+                            disabled={true}
+                        />
+                    </View>
+                    <ImageWithPlaceholder
+                        uri={item.urlfoto || ''}
+                        style={style.imagem as ImageStyle}
+                    />
+                    <View style={style.itemActions}>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.editButton]}
+                            onPress={() => editar(item)}
+                        >
+                            <Ionicons name="pencil" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Editar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.deleteButton]}
+                            onPress={() => excluir(item)}
+                        >
+                            <Ionicons name="trash" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Excluir</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             ))}
         </KeyboardAwareScrollView>
     );

@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, Pressable, Image, ImageStyle } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Pressable, ImageStyle } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { supabase } from "../../js/supabase";
 import { uploadImage } from "../../js/uploadImage";
@@ -6,9 +6,15 @@ import { useAlert } from "../../contexts/AlertContext";
 import React, { useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import Picker from "react-native-picker-select";
+import { Ionicons } from "@expo/vector-icons";
 import { Filme } from "../../model/Filme";
 import style from "../../js/style";
-import { Loading } from "../../components";
+import {
+    Loading,
+    MaskedDateInput,
+    ImageWithPlaceholder,
+    ProgressBar,
+} from "../../components";
 
 const GENEROS = [
     { label: "Ação", value: "Ação" },
@@ -35,6 +41,7 @@ const Manter = () => {
     const [formFilme, setFormFilme] = useState<Partial<Filme>>({});
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [filmes, setFilmes] = useState<Filme[]>([]);
     const [userId, setUserId] = useState<string | null>(null);
     const [imagePath, setImagePath] = useState("https://cdn-icons-png.flaticon.com/512/723/723082.png");
@@ -218,13 +225,17 @@ const Manter = () => {
         }
 
         setUploading(true);
+        setUploadProgress(0);
         setImagePath(asset.uri);
 
-        const { url, error } = await uploadImage(asset.uri, userId);
+        const { url, error } = await uploadImage(asset.uri, userId, {
+            onProgress: (progress) => setUploadProgress(progress),
+        });
 
         if (error) {
             alert('Erro ao enviar imagem: ' + error);
             setUploading(false);
+            setUploadProgress(0);
             return;
         }
 
@@ -233,6 +244,7 @@ const Manter = () => {
         }
 
         setUploading(false);
+        setUploadProgress(0);
     };
 
     if (loading) {
@@ -281,11 +293,12 @@ const Manter = () => {
             <View style={style.inputContainer}>
                 <Pressable onPress={() => selecionaFoto()} disabled={uploading}>
                     <View style={style.imagemView}>
-                        <Image source={{ uri: imagePath }} style={style.imagem as ImageStyle} />
+                        <ImageWithPlaceholder
+                            uri={imagePath}
+                            style={style.imagem as ImageStyle}
+                        />
                         {uploading && (
-                            <Text style={{ textAlign: 'center', color: '#8F6277', marginTop: 5 }}>
-                                Enviando...
-                            </Text>
+                            <ProgressBar progress={uploadProgress} />
                         )}
                     </View>
                 </Pressable>
@@ -337,8 +350,7 @@ const Manter = () => {
                     />
                 </View>
                 <View style={style.distancia}>
-                    <TextInput
-                        placeholder="Data de lançamento *"
+                    <MaskedDateInput
                         value={formFilme.datalancamento || ''}
                         onChangeText={(texto) =>
                             setFormFilme({
@@ -346,7 +358,7 @@ const Manter = () => {
                                 datalancamento: texto,
                             })
                         }
-                        style={style.input}
+                        placeholder="Data de lançamento *"
                     />
                 </View>
             </View>
@@ -355,25 +367,45 @@ const Manter = () => {
                     <Text style={style.buttonOutlineText}>Limpar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={style.buttonSave} onPress={Salvar} disabled={uploading}>
-                    <Text style={style.buttonText}>{uploading ? 'Aguarde...' : 'Salvar'}</Text>
+                    <Text style={style.buttonText}>{uploading ? 'Enviando...' : 'Salvar'}</Text>
                 </TouchableOpacity>
             </View>
 
             {filmes.length > 0 && (
                 <View>
-                    <Text style={style.textNews}>Clique para editar ou</Text>
-                    <Text style={[style.textNews, { marginBottom: 40 }]}>pressione para excluir</Text>
+                    <Text style={[style.textNews, { marginBottom: 20 }]}>Filmes cadastrados</Text>
                 </View>
             )}
 
-            {filmes.map((item, i) => (
-                <TouchableOpacity key={i} style={style.item} onPress={() => editar(item)} onLongPress={() => excluir(item)}>
-                    <Text style={style.titulo}>Título: {item.titulo}</Text>
-                    <Text style={style.titulo}>Gênero: {item.genero}</Text>
-                    <Text style={style.titulo}>Sinopse: {item.sinopse}</Text>
-                    <Text style={style.titulo}>Data de lançamento: {item.datalancamento}</Text>
-                    <Image source={{ uri: item.urlfoto }} style={style.imagem as ImageStyle} />
-                </TouchableOpacity>
+            {filmes.map((item) => (
+                <View key={item.id} style={style.item}>
+                    <View style={style.itemContent}>
+                        <Text style={style.titulo}>Título: {item.titulo}</Text>
+                        <Text style={style.titulo}>Gênero: {item.genero}</Text>
+                        <Text style={style.titulo}>Sinopse: {item.sinopse}</Text>
+                        <Text style={style.titulo}>Lançamento: {item.datalancamento}</Text>
+                    </View>
+                    <ImageWithPlaceholder
+                        uri={item.urlfoto || ''}
+                        style={style.imagem as ImageStyle}
+                    />
+                    <View style={style.itemActions}>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.editButton]}
+                            onPress={() => editar(item)}
+                        >
+                            <Ionicons name="pencil" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Editar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.deleteButton]}
+                            onPress={() => excluir(item)}
+                        >
+                            <Ionicons name="trash" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Excluir</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             ))}
         </KeyboardAwareScrollView>
     );

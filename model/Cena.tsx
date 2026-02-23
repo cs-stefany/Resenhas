@@ -19,7 +19,7 @@ export class Cena {
             "idFilme":          "${this.idFilme}",
             "titulo":           "${this.titulo}",
             "descricao":        "${this.descricao}",
-            "observacao":       "${this.observacao}" 
+            "observacao":       "${this.observacao}",
             "estrelas":         "${this.estrelas}",
             "urlFoto":          "${this.urlfoto}",
         }`;

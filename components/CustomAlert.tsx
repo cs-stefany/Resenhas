@@ -90,7 +90,8 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
                                     styles.button,
                                     getButtonStyle(button.style),
                                     buttons.length <= 2 && { flex: 1 },
-                                    buttons.length === 2 && index === 0 && { marginRight: 8 },
+                                    buttons.length === 2 && index === 0 && { marginRight: 10 },
+                                    buttons.length > 2 && index > 0 && { marginTop: 12 },
                                 ]}
                                 onPress={() => handleButtonPress(button)}
                                 activeOpacity={0.7}
@@ -147,14 +148,15 @@ const styles = StyleSheet.create({
     },
     buttonContainerVertical: {
         flexDirection: 'column',
+        alignItems: 'center',
     },
     button: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
         borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 100,
+        minWidth: 120,
     },
     buttonDefault: {
         backgroundColor: '#8F6277',

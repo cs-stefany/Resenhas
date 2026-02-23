@@ -1,10 +1,10 @@
-import { View, Text, Image, ImageStyle } from "react-native";
+import { View, Text, ImageStyle } from "react-native";
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../js/supabase";
 import { Filme } from "../../model/Filme";
 import style from "../../js/style";
 import { ScrollView } from "react-native-gesture-handler";
-import { Loading } from "../../components";
+import { Loading, ImageWithPlaceholder } from "../../components";
 
 const Listar = () => {
     const [loading, setLoading] = useState(true);
@@ -86,7 +86,7 @@ const Listar = () => {
                         <Text style={style.titulo}>Gênero: {item.genero}</Text>
                         <Text style={style.titulo}>Sinopse: {item.sinopse}</Text>
                         <Text style={style.titulo}>Data de lançamento: {item.datalancamento}</Text>
-                        <Image source={{ uri: item.urlfoto }} style={style.imagem as ImageStyle} />
+                        <ImageWithPlaceholder uri={item.urlfoto || ''} style={style.imagem as ImageStyle} />
                     </View>
                 ))
             )}

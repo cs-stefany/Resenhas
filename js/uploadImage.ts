@@ -3,20 +3,30 @@ import { decode } from 'base64-arraybuffer';
 import { supabase } from './supabase';
 import { Platform } from 'react-native';
 
+interface UploadResult {
+    url: string | null;
+    error: string | null;
+}
+
+interface UploadOptions {
+    onProgress?: (progress: number) => void;
+}
+
 /**
  * Faz upload de uma imagem para o Supabase Storage
  * Suporta tanto Android quanto iOS com diferentes métodos
  */
 export const uploadImage = async (
     uri: string,
-    userId: string
-): Promise<{ url: string | null; error: string | null }> => {
-    console.log('=== INÍCIO DO UPLOAD ===');
-    console.log('URI:', uri);
-    console.log('Platform:', Platform.OS);
-    console.log('UserId:', userId);
+    userId: string,
+    options?: UploadOptions
+): Promise<UploadResult> => {
+    const { onProgress } = options || {};
 
     try {
+        // Inicia progresso
+        onProgress?.(5);
+
         // Limpa a extensão do arquivo (remove query params se houver)
         const uriParts = uri.split('.');
         let fileExt = uriParts[uriParts.length - 1].split('?')[0].toLowerCase();
@@ -29,48 +39,42 @@ export const uploadImage = async (
         const fileName = `${userId}/${Date.now()}.${fileExt}`;
         const contentType = `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
 
-        console.log('FileName:', fileName);
-        console.log('ContentType:', contentType);
+        onProgress?.(15);
 
         let uploadData: ArrayBuffer;
 
-        // Método principal: Usar FileSystem com base64
-        console.log('Tentando ler arquivo com FileSystem...');
+        // Lê o arquivo como base64
         try {
+            onProgress?.(25);
             const base64 = await FileSystem.readAsStringAsync(uri, {
                 encoding: FileSystem.EncodingType.Base64,
             });
-            console.log('Base64 obtido, tamanho:', base64.length);
+            onProgress?.(50);
             uploadData = decode(base64);
-            console.log('ArrayBuffer criado, tamanho:', uploadData.byteLength);
+            onProgress?.(60);
         } catch (fsError: any) {
-            console.log('FileSystem falhou:', fsError.message);
-
             // Fallback: tentar com fetch
-            console.log('Tentando com fetch...');
             try {
+                onProgress?.(30);
                 const response = await fetch(uri);
-                console.log('Fetch response status:', response.status);
+                onProgress?.(45);
                 const blob = await response.blob();
-                console.log('Blob obtido, tamanho:', blob.size);
+                onProgress?.(55);
                 uploadData = await blobToArrayBuffer(blob);
-                console.log('ArrayBuffer criado do blob, tamanho:', uploadData.byteLength);
+                onProgress?.(65);
             } catch (fetchError: any) {
-                console.log('Fetch também falhou:', fetchError.message);
                 return { url: null, error: `Não foi possível ler a imagem: ${fetchError.message}` };
             }
         }
 
         // Verifica se temos dados para upload
         if (!uploadData || uploadData.byteLength === 0) {
-            console.log('ERRO: uploadData vazio');
             return { url: null, error: 'Imagem vazia ou inválida' };
         }
 
-        // Faz upload para o Supabase
-        console.log('Iniciando upload para Supabase...');
-        console.log('Bucket: imagens');
+        onProgress?.(70);
 
+        // Faz upload para o Supabase
         const { data, error: uploadError } = await supabase.storage
             .from('imagens')
             .upload(fileName, uploadData, {
@@ -78,11 +82,9 @@ export const uploadImage = async (
                 upsert: true,
             });
 
-        console.log('Resposta do Supabase - data:', data);
-        console.log('Resposta do Supabase - error:', uploadError);
+        onProgress?.(90);
 
         if (uploadError) {
-            console.log('ERRO no upload Supabase:', uploadError.message);
             return { url: null, error: uploadError.message };
         }
 
@@ -91,15 +93,11 @@ export const uploadImage = async (
             .from('imagens')
             .getPublicUrl(fileName);
 
-        console.log('URL pública:', urlData.publicUrl);
-        console.log('=== UPLOAD CONCLUÍDO COM SUCESSO ===');
+        onProgress?.(100);
 
         return { url: urlData.publicUrl, error: null };
 
     } catch (err: any) {
-        console.log('=== ERRO GERAL NO UPLOAD ===');
-        console.log('Mensagem:', err.message);
-        console.log('Stack:', err.stack);
         return { url: null, error: err.message || 'Erro desconhecido ao fazer upload' };
     }
 };

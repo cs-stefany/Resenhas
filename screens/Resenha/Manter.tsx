@@ -4,13 +4,14 @@ import { supabase } from "../../js/supabase";
 import { useAlert } from "../../contexts/AlertContext";
 import React, { useEffect, useState } from "react";
 import Picker from "react-native-picker-select";
+import { Ionicons } from "@expo/vector-icons";
 import { Resenha } from "../../model/Resenha";
 import { Filme } from "../../model/Filme";
 import style from "../../js/style";
-import { Loading } from "../../components";
+import { Loading, StarRating } from "../../components";
 
 const Manter = () => {
-    const [formResenha, setFormResenha] = useState<Partial<Resenha>>({ idFilme: "0" });
+    const [formResenha, setFormResenha] = useState<Partial<Resenha>>({ idFilme: "0", estrelas: 0 });
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
     const [resenhas, setResenhas] = useState<Resenha[]>([]);
@@ -169,7 +170,7 @@ const Manter = () => {
     };
 
     const Limpar = () => {
-        setFormResenha({ idFilme: "0" });
+        setFormResenha({ idFilme: "0", estrelas: 0 });
     };
 
     if (loading) {
@@ -262,23 +263,23 @@ const Manter = () => {
                                         texto: texto,
                                     })
                                 }
-                                style={style.input}
+                                style={[style.input, { minHeight: 100, textAlignVertical: 'top' }]}
                                 multiline
                             />
                         </View>
-                        <View style={style.distancia}>
-                            <TextInput
-                                placeholder="Estrelas (0-5)"
-                                keyboardType="numeric"
-                                value={(formResenha.estrelas || 0).toString()}
-                                onChangeText={(texto) => {
-                                    const num = parseInt(texto) || 0;
+                        <View style={[style.distancia, { alignItems: 'center' }]}>
+                            <Text style={{ color: '#8F6277', marginBottom: 10, fontWeight: '600' }}>
+                                Avaliação:
+                            </Text>
+                            <StarRating
+                                rating={formResenha.estrelas || 0}
+                                onRatingChange={(rating) =>
                                     setFormResenha({
                                         ...formResenha,
-                                        estrelas: Math.min(5, Math.max(0, num)),
-                                    });
-                                }}
-                                style={style.input}
+                                        estrelas: rating,
+                                    })
+                                }
+                                size={36}
                             />
                         </View>
                     </View>
@@ -295,23 +296,41 @@ const Manter = () => {
 
             {resenhas.length > 0 && (
                 <View>
-                    <Text style={style.textNews}>Clique para editar ou</Text>
-                    <Text style={[style.textNews, { marginBottom: 40 }]}>pressione para excluir</Text>
+                    <Text style={[style.textNews, { marginBottom: 20 }]}>Resenhas cadastradas</Text>
                 </View>
             )}
 
-            {resenhas.map((item, i) => (
-                <TouchableOpacity
-                    key={i}
-                    style={style.item}
-                    onPress={() => editar(item)}
-                    onLongPress={() => excluir(item)}
-                >
-                    <Text style={style.titulo}>Filme: {filmes.find((f) => f.id === item.idFilme)?.titulo || "N/A"}</Text>
-                    <Text style={style.titulo}>Título: {item.titulo}</Text>
-                    <Text style={style.titulo}>Texto: {item.texto}</Text>
-                    <Text style={style.titulo}>Estrelas: {"⭐".repeat(item.estrelas || 0)}</Text>
-                </TouchableOpacity>
+            {resenhas.map((item) => (
+                <View key={item.id} style={style.item}>
+                    <View style={style.itemContent}>
+                        <Text style={style.titulo}>Filme: {filmes.find((f) => f.id === item.idFilme)?.titulo || "N/A"}</Text>
+                        <Text style={style.titulo}>Título: {item.titulo}</Text>
+                        <Text style={style.titulo}>Texto: {item.texto}</Text>
+                    </View>
+                    <View style={{ marginTop: 10 }}>
+                        <StarRating
+                            rating={item.estrelas || 0}
+                            size={24}
+                            disabled={true}
+                        />
+                    </View>
+                    <View style={style.itemActions}>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.editButton]}
+                            onPress={() => editar(item)}
+                        >
+                            <Ionicons name="pencil" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Editar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[style.actionButton, style.deleteButton]}
+                            onPress={() => excluir(item)}
+                        >
+                            <Ionicons name="trash" size={18} color="#FFFFFF" />
+                            <Text style={style.actionButtonText}>Excluir</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             ))}
         </KeyboardAwareScrollView>
     );
