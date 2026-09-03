@@ -2,6 +2,14 @@
 
 Aplicativo mobile para guardar filmes, escrever resenhas e registrar cenas favoritas. Feito com React Native, Expo, TypeScript e Supabase.
 
+## Testar no Android
+
+[Baixar o APK do CineFy](https://github.com/cs-stefany/Resenhas/releases/latest/download/CineFy-v1.0.0.apk)
+
+No celular Android, abra o link acima, baixe o arquivo e permita a instalação quando o sistema solicitar. O aplicativo é distribuído diretamente pelo GitHub, então o Android pode exibir um aviso sobre instalação de fonte externa.
+
+O banco começa vazio: crie uma conta, confirme o e-mail e entre para testar filmes, resenhas e cenas.
+
 ## O que funciona
 
 - criação de conta com nome, data de nascimento, e-mail e senha;
@@ -14,7 +22,7 @@ Aplicativo mobile para guardar filmes, escrever resenhas e registrar cenas favor
 - atualização em tempo real;
 - isolamento dos dados por usuário com Row Level Security (RLS).
 
-## Executar no celular
+## Executar pelo código-fonte
 
 Pré-requisitos: Node.js, npm e o aplicativo Expo Go no celular.
 
