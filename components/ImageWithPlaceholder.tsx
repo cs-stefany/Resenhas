@@ -12,9 +12,14 @@ const ImageWithPlaceholder: React.FC<ImageWithPlaceholderProps> = ({
     style,
     placeholderColor = '#DDB0C4',
 }) => {
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(Boolean(uri));
     const [hasError, setHasError] = useState(false);
     const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+    useEffect(() => {
+        setHasError(false);
+        setIsLoading(Boolean(uri));
+    }, [uri]);
 
     useEffect(() => {
         if (isLoading) {
@@ -64,11 +69,12 @@ const ImageWithPlaceholder: React.FC<ImageWithPlaceholderProps> = ({
                 />
             )}
 
-            {hasError ? (
-                <View style={[placeholderStyle, { opacity: 0.5 }]}>
+            {!uri || hasError ? (
+                <View style={[placeholderStyle, { opacity: 0.75 }]}>
                     <Image
-                        source={{ uri: 'https://cdn-icons-png.flaticon.com/512/723/723082.png' }}
-                        style={combinedStyle}
+                        source={require('../assets/camera.png')}
+                        style={{ width: 54, height: 54, opacity: 0.65 }}
+                        resizeMode="contain"
                     />
                 </View>
             ) : (

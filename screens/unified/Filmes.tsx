@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ImageStyle, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Picker from 'react-native-picker-select';
+import { Picker } from '@react-native-picker/picker';
 
 import { supabase } from '../../js/supabase';
 import { useFormModal } from '../../contexts/FormModalContext';
 import { useAlert } from '../../contexts/AlertContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Filme } from '../../model/Filme';
 import { Loading, ImageWithPlaceholder } from '../../components';
 import SearchFilterBar from '../../components/SearchFilterBar';
@@ -13,19 +14,19 @@ import style from '../../js/style';
 
 const GENEROS = [
     { label: "Todos", value: "" },
-    { label: "Acao", value: "Acao" },
+    { label: "Ação", value: "Acao" },
     { label: "Aventura", value: "Aventura" },
-    { label: "Animacao", value: "Animacao" },
-    { label: "Comedia", value: "Comedia" },
+    { label: "Animação", value: "Animacao" },
+    { label: "Comédia", value: "Comedia" },
     { label: "Crime", value: "Crime" },
-    { label: "Documentario", value: "Documentario" },
+    { label: "Documentário", value: "Documentario" },
     { label: "Drama", value: "Drama" },
     { label: "Fantasia", value: "Fantasia" },
-    { label: "Ficcao Cientifica", value: "Ficcao Cientifica" },
+    { label: "Ficção científica", value: "Ficcao Cientifica" },
     { label: "Guerra", value: "Guerra" },
-    { label: "Historia", value: "Historia" },
+    { label: "História", value: "Historia" },
     { label: "Horror", value: "Horror" },
-    { label: "Misterio", value: "Misterio" },
+    { label: "Mistério", value: "Misterio" },
     { label: "Musical", value: "Musical" },
     { label: "Romance", value: "Romance" },
     { label: "Suspense", value: "Suspense" },
@@ -36,24 +37,23 @@ const GENEROS = [
 const Filmes = () => {
     const [loading, setLoading] = useState(true);
     const [filmes, setFilmes] = useState<Filme[]>([]);
-    const [userId, setUserId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [generoFilter, setGeneroFilter] = useState('');
 
-    const { openCreate, openEdit } = useFormModal();
+    const { openCreate, openEdit, revision } = useFormModal();
     const { alert, confirmDelete } = useAlert();
+    const { session } = useAuth();
 
     useEffect(() => {
-        const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUserId(user.id);
-                fetchFilmes(user.id);
-                setupSubscription(user.id);
-            }
-        };
-        init();
-    }, []);
+        const uid = session?.user.id;
+        if (!uid) {
+            setLoading(false);
+            return;
+        }
+
+        fetchFilmes(uid);
+        return setupSubscription(uid);
+    }, [session?.user.id, revision]);
 
     const fetchFilmes = async (uid: string) => {
         const { data, error } = await supabase
@@ -61,7 +61,9 @@ const Filmes = () => {
             .select('*')
             .eq('user_id', uid);
 
-        if (!error && data) {
+        if (error) {
+            alert('Não foi possível carregar seus filmes. Verifique sua conexão.');
+        } else if (data) {
             setFilmes(data.map(f => ({ ...f, key: f.id })));
         }
         setLoading(false);
@@ -80,7 +82,10 @@ const Filmes = () => {
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
-                        setFilmes(prev => [...prev, { ...payload.new as Filme, key: payload.new.id }]);
+                        const next = { ...payload.new as Filme, key: payload.new.id };
+                        setFilmes(prev => prev.some((item) => item.id === next.id)
+                            ? prev.map((item) => item.id === next.id ? next : item)
+                            : [...prev, next]);
                     } else if (payload.eventType === 'UPDATE') {
                         setFilmes(prev => prev.map(f =>
                             f.id === payload.new.id ? { ...payload.new as Filme, key: payload.new.id } : f
@@ -110,12 +115,13 @@ const Filmes = () => {
             const { error } = await supabase
                 .from('filmes')
                 .delete()
-                .eq('id', item.id);
+                .eq('id', item.id)
+                .eq('user_id', session?.user.id);
 
             if (error) {
                 alert("Erro ao excluir: " + error.message);
             } else {
-                alert("Filme excluido com sucesso!");
+                alert("Filme excluído com sucesso!");
             }
         });
     };
@@ -126,19 +132,18 @@ const Filmes = () => {
 
     const FilterDropdown = (
         <View style={styles.filterDropdown}>
-            <Picker
-                placeholder={{ label: "Genero", value: "" }}
-                style={{
-                    viewContainer: styles.pickerContainer,
-                    placeholder: { color: "#8F6277", fontSize: 12 },
-                    inputIOS: styles.pickerText,
-                    inputAndroid: styles.pickerText,
-                }}
-                onValueChange={(value) => setGeneroFilter(value)}
-                value={generoFilter}
-                items={GENEROS}
-                useNativeAndroidPickerStyle={false}
-            />
+            <View style={styles.pickerContainer}>
+                <Picker
+                    selectedValue={generoFilter}
+                    onValueChange={(value) => setGeneroFilter(value)}
+                    style={styles.picker}
+                    dropdownIconColor="#8F6277"
+                >
+                    {GENEROS.map((item) => (
+                        <Picker.Item key={item.value || 'todos'} label={item.label} value={item.value} />
+                    ))}
+                </Picker>
+            </View>
         </View>
     );
 
@@ -169,10 +174,10 @@ const Filmes = () => {
                     filteredFilmes.map((item) => (
                         <View key={item.id} style={style.item}>
                             <View style={style.itemContent}>
-                                <Text style={style.titulo}>Titulo: {item.titulo}</Text>
-                                <Text style={style.titulo}>Genero: {item.genero}</Text>
+                                <Text style={style.titulo}>Título: {item.titulo}</Text>
+                                <Text style={style.titulo}>Gênero: {item.genero}</Text>
                                 <Text style={style.titulo}>Sinopse: {item.sinopse}</Text>
-                                <Text style={style.titulo}>Lancamento: {item.datalancamento}</Text>
+                                <Text style={style.titulo}>Lançamento: {item.datalancamento}</Text>
                             </View>
                             <ImageWithPlaceholder
                                 uri={item.urlfoto || ''}
@@ -221,9 +226,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#CD9CB2',
     },
-    pickerText: {
+    picker: {
         fontSize: 12,
         color: '#8F6277',
+        height: 38,
+        width: 124,
     },
     emptyState: {
         flex: 1,

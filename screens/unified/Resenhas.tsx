@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../js/supabase';
 import { useFormModal } from '../../contexts/FormModalContext';
 import { useAlert } from '../../contexts/AlertContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Resenha } from '../../model/Resenha';
 import { Filme } from '../../model/Filme';
 import { Loading, StarRating } from '../../components';
@@ -14,27 +15,26 @@ const Resenhas = () => {
     const [loading, setLoading] = useState(true);
     const [resenhas, setResenhas] = useState<Resenha[]>([]);
     const [filmes, setFilmes] = useState<Filme[]>([]);
-    const [userId, setUserId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [estrelasFilter, setEstrelasFilter] = useState<number | null>(null);
 
-    const { openCreate, openEdit } = useFormModal();
+    const { openCreate, openEdit, revision } = useFormModal();
     const { alert, confirmDelete } = useAlert();
+    const { session } = useAuth();
 
     useEffect(() => {
-        const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUserId(user.id);
-                fetchData(user.id);
-                setupSubscriptions(user.id);
-            }
-        };
-        init();
-    }, []);
+        const uid = session?.user.id;
+        if (!uid) {
+            setLoading(false);
+            return;
+        }
+
+        fetchData(uid);
+        return setupSubscriptions(uid);
+    }, [session?.user.id, revision]);
 
     const fetchData = async (uid: string) => {
-        const { data: resenhasData } = await supabase
+        const { data: resenhasData, error: resenhasError } = await supabase
             .from('resenhas')
             .select('*')
             .eq('user_id', uid);
@@ -43,13 +43,17 @@ const Resenhas = () => {
             setResenhas(resenhasData.map(r => ({ ...r, key: r.id, idFilme: r.id_filme })));
         }
 
-        const { data: filmesData } = await supabase
+        const { data: filmesData, error: filmesError } = await supabase
             .from('filmes')
             .select('*')
             .eq('user_id', uid);
 
         if (filmesData) {
             setFilmes(filmesData.map(f => ({ ...f, key: f.id })));
+        }
+
+        if (resenhasError || filmesError) {
+            alert('Não foi possível carregar suas resenhas. Verifique sua conexão.');
         }
 
         setLoading(false);
@@ -68,7 +72,10 @@ const Resenhas = () => {
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
-                        setResenhas(prev => [...prev, { ...payload.new as any, key: payload.new.id, idFilme: payload.new.id_filme }]);
+                        const next = { ...payload.new as Resenha, key: payload.new.id, idFilme: payload.new.id_filme };
+                        setResenhas(prev => prev.some((item) => item.id === next.id)
+                            ? prev.map((item) => item.id === next.id ? next : item)
+                            : [...prev, next]);
                     } else if (payload.eventType === 'UPDATE') {
                         setResenhas(prev => prev.map(r =>
                             r.id === payload.new.id ? { ...payload.new as any, key: payload.new.id, idFilme: payload.new.id_filme } : r
@@ -92,7 +99,10 @@ const Resenhas = () => {
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
-                        setFilmes(prev => [...prev, { ...payload.new as Filme, key: payload.new.id }]);
+                        const next = { ...payload.new as Filme, key: payload.new.id };
+                        setFilmes(prev => prev.some((item) => item.id === next.id)
+                            ? prev.map((item) => item.id === next.id ? next : item)
+                            : [...prev, next]);
                     } else if (payload.eventType === 'UPDATE') {
                         setFilmes(prev => prev.map(f =>
                             f.id === payload.new.id ? { ...payload.new as Filme, key: payload.new.id } : f
@@ -123,12 +133,13 @@ const Resenhas = () => {
             const { error } = await supabase
                 .from('resenhas')
                 .delete()
-                .eq('id', item.id);
+                .eq('id', item.id)
+                .eq('user_id', session?.user.id);
 
             if (error) {
                 alert("Erro ao excluir: " + error.message);
             } else {
-                alert("Resenha excluida com sucesso!");
+                alert("Resenha excluída com sucesso!");
             }
         });
     };
@@ -220,7 +231,7 @@ const Resenhas = () => {
                         <View key={item.id} style={style.item}>
                             <View style={style.itemContent}>
                                 <Text style={style.titulo}>Filme: {getFilmeName(item.idFilme)}</Text>
-                                <Text style={style.titulo}>Titulo: {item.titulo}</Text>
+                                <Text style={style.titulo}>Título: {item.titulo}</Text>
                                 <Text style={style.titulo}>Texto: {item.texto}</Text>
                             </View>
                             <View style={{ marginTop: 10 }}>

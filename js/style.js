@@ -65,7 +65,7 @@ export default StyleSheet.create({
     },
     buttonText: {
         color: "#FFFFFF",
-        fontWeight: "Bold",
+        fontWeight: "bold",
         fontSize: 16,
     },
     buttonOutline: {

@@ -12,13 +12,15 @@ import {
 import Modal from 'react-native-modal';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import Picker from 'react-native-picker-select';
+import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useFormModal, EntityType } from '../contexts/FormModalContext';
 import { useAlert } from '../contexts/AlertContext';
+import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../js/supabase';
 import { uploadImage } from '../js/uploadImage';
+import { isValidBrazilianDate } from '../js/validation';
 import {
     ImageWithPlaceholder,
     ProgressBar,
@@ -29,19 +31,19 @@ import {
 const { height } = Dimensions.get('window');
 
 const GENEROS = [
-    { label: "Acao", value: "Acao" },
+    { label: "Ação", value: "Acao" },
     { label: "Aventura", value: "Aventura" },
-    { label: "Animacao", value: "Animacao" },
-    { label: "Comedia", value: "Comedia" },
+    { label: "Animação", value: "Animacao" },
+    { label: "Comédia", value: "Comedia" },
     { label: "Crime", value: "Crime" },
-    { label: "Documentario", value: "Documentario" },
+    { label: "Documentário", value: "Documentario" },
     { label: "Drama", value: "Drama" },
     { label: "Fantasia", value: "Fantasia" },
-    { label: "Ficcao Cientifica", value: "Ficcao Cientifica" },
+    { label: "Ficção científica", value: "Ficcao Cientifica" },
     { label: "Guerra", value: "Guerra" },
-    { label: "Historia", value: "Historia" },
+    { label: "História", value: "Historia" },
     { label: "Horror", value: "Horror" },
-    { label: "Misterio", value: "Misterio" },
+    { label: "Mistério", value: "Misterio" },
     { label: "Musical", value: "Musical" },
     { label: "Romance", value: "Romance" },
     { label: "Suspense", value: "Suspense" },
@@ -49,32 +51,25 @@ const GENEROS = [
     { label: "Western", value: "Western" },
 ];
 
-const DEFAULT_IMAGE = "https://cdn-icons-png.flaticon.com/512/723/723082.png";
+const DEFAULT_IMAGE = '';
 
 interface FormModalProps {
     onSave?: () => void;
 }
 
 const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
-    const { state, close } = useFormModal();
+    const { state, close, notifySaved } = useFormModal();
     const { alert, showAlert } = useAlert();
+    const { session } = useAuth();
     const { isOpen, mode, entity, editingItem, filmes } = state;
 
     // Form state
     const [formData, setFormData] = useState<any>({});
     const [imagePath, setImagePath] = useState(DEFAULT_IMAGE);
     const [uploading, setUploading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [userId, setUserId] = useState<string | null>(null);
-
-    // Get user ID on mount
-    useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) setUserId(user.id);
-        };
-        getUser();
-    }, []);
+    const userId = session?.user.id ?? null;
 
     // Reset form when modal opens/closes or entity changes
     useEffect(() => {
@@ -120,9 +115,9 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
     const selecionaFoto = () => {
         showAlert({
             title: "Selecionar Foto",
-            message: "Escolha uma opcao:",
+            message: "Escolha uma opção:",
             buttons: [
-                { text: "Camera", style: "default", onPress: () => abrirCamera() },
+                { text: "Câmera", style: "default", onPress: () => abrirCamera() },
                 { text: "Galeria", style: "default", onPress: () => abrirGaleria() },
                 { text: "Cancelar", style: "cancel" },
             ],
@@ -132,7 +127,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
     const abrirCamera = async () => {
         const permissao = await ImagePicker.requestCameraPermissionsAsync();
         if (!permissao.granted) {
-            alert("Voce precisa permitir o acesso a camera.");
+            alert("Você precisa permitir o acesso à câmera.");
             return;
         }
         const foto = await ImagePicker.launchCameraAsync({
@@ -147,11 +142,11 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
     const abrirGaleria = async () => {
         const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permissao.granted) {
-            alert("Voce precisa permitir o acesso a galeria.");
+            alert("Você precisa permitir o acesso à galeria.");
             return;
         }
         const foto = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             quality: 0.7,
         });
@@ -162,7 +157,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
 
     const enviaFoto = async (asset: ImagePicker.ImagePickerAsset) => {
         if (!userId || !asset.uri) {
-            alert("Erro: nao foi possivel processar a imagem.");
+            alert("Não foi possível processar a imagem.");
             return;
         }
 
@@ -194,19 +189,23 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
         switch (entity) {
             case 'filme':
                 if (!formData.titulo?.trim()) {
-                    alert("O titulo e obrigatorio.");
+                    alert("O título é obrigatório.");
                     return false;
                 }
                 if (!formData.genero) {
-                    alert("O genero e obrigatorio.");
+                    alert("O gênero é obrigatório.");
                     return false;
                 }
                 if (!formData.datalancamento?.trim()) {
-                    alert("A data de lancamento e obrigatoria.");
+                    alert("A data de lançamento é obrigatória.");
+                    return false;
+                }
+                if (!isValidBrazilianDate(formData.datalancamento)) {
+                    alert("Digite uma data de lançamento válida.");
                     return false;
                 }
                 if (!formData.urlfoto) {
-                    alert("E necessario uma foto do filme.");
+                    alert("É necessário adicionar uma foto do filme.");
                     return false;
                 }
                 break;
@@ -217,11 +216,11 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                     return false;
                 }
                 if (!formData.titulo?.trim()) {
-                    alert("O titulo e obrigatorio.");
+                    alert("O título é obrigatório.");
                     return false;
                 }
                 if (!formData.texto?.trim()) {
-                    alert("O texto da resenha e obrigatorio.");
+                    alert("O texto da resenha é obrigatório.");
                     return false;
                 }
                 break;
@@ -232,15 +231,15 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                     return false;
                 }
                 if (!formData.titulo?.trim()) {
-                    alert("O titulo e obrigatorio.");
+                    alert("O título é obrigatório.");
                     return false;
                 }
                 if (!formData.descricao?.trim()) {
-                    alert("A descricao e obrigatoria.");
+                    alert("A descrição é obrigatória.");
                     return false;
                 }
                 if (!formData.urlfoto) {
-                    alert("E necessario uma foto da cena.");
+                    alert("É necessário adicionar uma foto da cena.");
                     return false;
                 }
                 break;
@@ -250,10 +249,15 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
 
     // Save
     const salvar = async () => {
-        if (!validar() || !userId) return;
+        if (!validar()) return;
+        if (!userId) {
+            alert('Sua sessão expirou. Entre novamente para salvar.');
+            return;
+        }
 
         const tableName = entity === 'filme' ? 'filmes' : entity === 'resenha' ? 'resenhas' : 'cenas';
 
+        setSaving(true);
         try {
             if (mode === 'create') {
                 let insertData: any = { user_id: userId };
@@ -327,7 +331,8 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                 const { error } = await supabase
                     .from(tableName)
                     .update(updateData)
-                    .eq('id', formData.id);
+                    .eq('id', formData.id)
+                    .eq('user_id', userId);
 
                 if (error) {
                     alert("Erro ao editar: " + error.message);
@@ -338,9 +343,12 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             }
 
             close();
+            notifySaved();
             onSave?.();
         } catch (err: any) {
             alert("Erro: " + err.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -359,9 +367,9 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </Pressable>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Titulo *</Text>
+                <Text style={styles.label}>Título *</Text>
                 <TextInput
-                    placeholder="Digite o titulo"
+                    placeholder="Digite o título"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -369,17 +377,19 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Genero *</Text>
-                <Picker
-                    placeholder={{ label: "Selecione um genero...", value: "" }}
-                    style={{
-                        viewContainer: styles.input,
-                        placeholder: { color: "#999" }
-                    }}
-                    onValueChange={(value) => updateField('genero', value)}
-                    value={formData.genero || ''}
-                    items={GENEROS}
-                />
+                <Text style={styles.label}>Gênero *</Text>
+                <View style={styles.pickerContainer}>
+                    <Picker
+                        selectedValue={formData.genero || ''}
+                        onValueChange={(value) => updateField('genero', value)}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label="Selecione um gênero..." value="" color="#777" />
+                        {GENEROS.map((item) => (
+                            <Picker.Item key={item.value} label={item.label} value={item.value} />
+                        ))}
+                    </Picker>
+                </View>
             </View>
 
             <View style={styles.fieldContainer}>
@@ -394,7 +404,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Data de Lancamento *</Text>
+                <Text style={styles.label}>Data de lançamento *</Text>
                 <MaskedDateInput
                     value={formData.datalancamento || ''}
                     onChangeText={(text) => updateField('datalancamento', text)}
@@ -408,22 +418,24 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
         <>
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Filme *</Text>
-                <Picker
-                    placeholder={{ label: "Selecione um filme...", value: "0" }}
-                    style={{
-                        viewContainer: styles.input,
-                        placeholder: { color: "#999" }
-                    }}
-                    onValueChange={(value) => updateField('idFilme', value)}
-                    value={formData.idFilme || '0'}
-                    items={filmes.map((f: any) => ({ label: f.titulo, value: f.id }))}
-                />
+                <View style={styles.pickerContainer}>
+                    <Picker
+                        selectedValue={formData.idFilme || '0'}
+                        onValueChange={(value) => updateField('idFilme', value)}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label="Selecione um filme..." value="0" color="#777" />
+                        {filmes.map((filme: any) => (
+                            <Picker.Item key={filme.id} label={filme.titulo} value={filme.id} />
+                        ))}
+                    </Picker>
+                </View>
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Titulo *</Text>
+                <Text style={styles.label}>Título *</Text>
                 <TextInput
-                    placeholder="Digite o titulo da resenha"
+                    placeholder="Digite o título da resenha"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -442,7 +454,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={[styles.fieldContainer, { alignItems: 'center' }]}>
-                <Text style={styles.label}>Avaliacao</Text>
+                <Text style={styles.label}>Avaliação</Text>
                 <StarRating
                     rating={formData.estrelas || 0}
                     onRatingChange={(rating) => updateField('estrelas', rating)}
@@ -467,22 +479,24 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Filme *</Text>
-                <Picker
-                    placeholder={{ label: "Selecione um filme...", value: "0" }}
-                    style={{
-                        viewContainer: styles.input,
-                        placeholder: { color: "#999" }
-                    }}
-                    onValueChange={(value) => updateField('idFilme', value)}
-                    value={formData.idFilme || '0'}
-                    items={filmes.map((f: any) => ({ label: f.titulo, value: f.id }))}
-                />
+                <View style={styles.pickerContainer}>
+                    <Picker
+                        selectedValue={formData.idFilme || '0'}
+                        onValueChange={(value) => updateField('idFilme', value)}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label="Selecione um filme..." value="0" color="#777" />
+                        {filmes.map((filme: any) => (
+                            <Picker.Item key={filme.id} label={filme.titulo} value={filme.id} />
+                        ))}
+                    </Picker>
+                </View>
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Titulo *</Text>
+                <Text style={styles.label}>Título *</Text>
                 <TextInput
-                    placeholder="Digite o titulo"
+                    placeholder="Digite o título"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -490,7 +504,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Descricao *</Text>
+                <Text style={styles.label}>Descrição *</Text>
                 <TextInput
                     placeholder="Descreva a cena"
                     value={formData.descricao || ''}
@@ -501,9 +515,9 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Observacao</Text>
+                <Text style={styles.label}>Observação</Text>
                 <TextInput
-                    placeholder="Observacoes adicionais"
+                    placeholder="Observações adicionais"
                     value={formData.observacao || ''}
                     onChangeText={(text) => updateField('observacao', text)}
                     style={styles.input}
@@ -511,7 +525,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
             </View>
 
             <View style={[styles.fieldContainer, { alignItems: 'center' }]}>
-                <Text style={styles.label}>Avaliacao</Text>
+                <Text style={styles.label}>Avaliação</Text>
                 <StarRating
                     rating={formData.estrelas || 0}
                     onRatingChange={(rating) => updateField('estrelas', rating)}
@@ -562,12 +576,12 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                         <Text style={styles.cancelButtonText}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.saveButton, uploading && styles.disabledButton]}
+                        style={[styles.saveButton, (uploading || saving) && styles.disabledButton]}
                         onPress={salvar}
-                        disabled={uploading}
+                        disabled={uploading || saving}
                     >
                         <Text style={styles.saveButtonText}>
-                            {uploading ? 'Enviando...' : 'Salvar'}
+                            {uploading ? 'Enviando imagem...' : saving ? 'Salvando...' : 'Salvar'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -627,6 +641,17 @@ const styles = StyleSheet.create({
         borderColor: '#CD9CB2',
         color: '#000',
         fontSize: 15,
+    },
+    pickerContainer: {
+        backgroundColor: 'rgba(173, 126, 148, 0.3)',
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: '#CD9CB2',
+        overflow: 'hidden',
+    },
+    picker: {
+        color: '#35252D',
+        backgroundColor: 'transparent',
     },
     textArea: {
         minHeight: 80,

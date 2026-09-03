@@ -13,9 +13,11 @@ interface FormModalState {
 
 interface FormModalContextType {
     state: FormModalState;
+    revision: number;
     openCreate: (entity: EntityType, filmes?: any[]) => void;
     openEdit: (entity: EntityType, item: any, filmes?: any[]) => void;
     close: () => void;
+    notifySaved: () => void;
     setFilmes: (filmes: any[]) => void;
 }
 
@@ -31,6 +33,7 @@ const FormModalContext = createContext<FormModalContextType | undefined>(undefin
 
 export const FormModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [state, setState] = useState<FormModalState>(initialState);
+    const [revision, setRevision] = useState(0);
 
     const openCreate = useCallback((entity: EntityType, filmes: any[] = []) => {
         setState({
@@ -67,8 +70,12 @@ export const FormModalProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }));
     }, []);
 
+    const notifySaved = useCallback(() => {
+        setRevision((current) => current + 1);
+    }, []);
+
     return (
-        <FormModalContext.Provider value={{ state, openCreate, openEdit, close, setFilmes }}>
+        <FormModalContext.Provider value={{ state, revision, openCreate, openEdit, close, notifySaved, setFilmes }}>
             {children}
         </FormModalContext.Provider>
     );

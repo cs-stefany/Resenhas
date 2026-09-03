@@ -1,115 +1,65 @@
-# CineFy - App de Resenhas de Filmes
+# CineFy
 
-Aplicativo mobile para gerenciar sua coleção de filmes, escrever resenhas e catalogar cenas favoritas.
+Aplicativo mobile para guardar filmes, escrever resenhas e registrar cenas favoritas. Feito com React Native, Expo, TypeScript e Supabase.
 
-Desenvolvido com React Native + Expo e Supabase (autenticação, banco de dados e storage).
+## O que funciona
 
-## Screenshots
+- criação de conta com nome, data de nascimento, e-mail e senha;
+- confirmação de e-mail e sessão persistente;
+- login, logout e recuperação de senha por link;
+- cadastro, edição, pesquisa, filtro e exclusão de filmes;
+- resenhas e cenas vinculadas aos filmes do usuário;
+- avaliação de zero a cinco estrelas;
+- câmera, galeria e upload de imagens;
+- atualização em tempo real;
+- isolamento dos dados por usuário com Row Level Security (RLS).
 
-_Em breve_
+## Executar no celular
 
-## Funcionalidades por Tela
-
-### Tela de Login
-
-- Autenticação com email e senha
-- Redirecionamento automático se já estiver logado
-- Link para tela de cadastro
-
-### Tela de Registro
-
-- Criação de nova conta
-- Campos: nome, email, senha, data de nascimento
-- Após registro, redireciona automaticamente para o menu principal
-
-### Menu Principal (Drawer)
-
-Navegação lateral com acesso a todas as funcionalidades:
-
-- Filmes (Listar / Manter)
-- Resenhas (Listar / Manter)
-- Cenas (Listar / Manter)
-
----
-
-### Filmes
-
-#### Listar Filmes
-
-- Visualização de todos os filmes cadastrados
-- Exibe: título, gênero, sinopse, data de lançamento e foto
-- Atualização em tempo real
-
-#### Manter Filmes
-
-- **Adicionar**: cadastrar novo filme com foto (câmera ou galeria)
-- **Editar**: toque no filme para editar seus dados
-- **Excluir**: pressione e segure para excluir
-- Campos: título*, gênero*, sinopse, data de lançamento*, foto*
-
----
-
-### Resenhas
-
-#### Listar Resenhas
-
-- Visualização de todas as resenhas cadastradas
-- Exibe: filme associado, título, texto e estrelas
-- Atualização em tempo real
-
-#### Manter Resenhas
-
-- **Adicionar**: criar nova resenha vinculada a um filme
-- **Editar**: toque na resenha para editar
-- **Excluir**: pressione e segure para excluir
-- Campos: filme*, título*, texto\*, estrelas (0-5)
-
----
-
-### Cenas
-
-#### Listar Cenas
-
-- Visualização de todas as cenas cadastradas
-- Exibe: filme associado, título, descrição, observação, estrelas e foto
-- Atualização em tempo real
-
-#### Manter Cenas
-
-- **Adicionar**: cadastrar cena favorita com foto
-- **Editar**: toque na cena para editar
-- **Excluir**: pressione e segure para excluir
-- Campos: filme*, título*, descrição*, observação, estrelas (0-5), foto*
-
----
-
-## Tecnologias Utilizadas
-
-- **React Native** - Framework mobile
-- **Expo** - Plataforma de desenvolvimento
-- **Supabase** - Backend (Auth, Database, Storage)
-- **TypeScript** - Tipagem estática
-- **React Navigation** - Navegação (Stack + Drawer)
-
-## Como Executar
-
-### Pré-requisitos
-
-- Node.js instalado
-- Expo Go no celular (Android/iOS)
-
-### Instalação
+Pré-requisitos: Node.js, npm e o aplicativo Expo Go no celular.
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/IF-Resenhas.git
-
-# Entre na pasta
-cd IF-Resenhas
-
-# Instale as dependências
+git clone https://github.com/cs-stefany/Resenhas.git
+cd Resenhas
 npm install
-
-# Inicie o projeto
-npx expo start
+copy .env.example .env.local
+npm start
 ```
+
+Preencha o `.env.local` antes de iniciar:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
+```
+
+Com o computador e o celular na mesma rede, leia o QR Code com o Expo Go. Se a rede bloquear a conexão local, execute `npx expo start --tunnel`.
+
+## Preparar o Supabase
+
+1. Crie um projeto em [Supabase](https://supabase.com/dashboard).
+2. Abra **SQL Editor**, cole o conteúdo de `supabase/migrations/001_initial_schema.sql` e execute.
+3. Em **Project Settings → API**, copie a URL do projeto e a chave pública (`publishable` ou `anon`) para o `.env.local`.
+4. Em **Authentication → URL Configuration → Redirect URLs**, adicione:
+   - `cinefy://**` para builds instalados;
+   - a URL `exp://...` exibida pelo Expo durante o desenvolvimento, quando for testar links pelo Expo Go.
+5. Em **Authentication → Providers → Email**, mantenha o provedor de e-mail habilitado.
+
+O SQL cria as tabelas, índices, políticas de segurança, bucket de imagens e publicação de Realtime. Nunca coloque a `service_role` no aplicativo.
+
+## Verificações
+
+```bash
+npm run typecheck
+npx expo export --platform android
+```
+
+## Estrutura principal
+
+- `contexts/AuthContext.tsx`: restauração e mudanças da sessão;
+- `screens/Login.tsx`: entrada e solicitação de recuperação;
+- `screens/Registro.tsx`: cadastro e confirmação de e-mail;
+- `screens/RedefinirSenha.tsx`: definição da nova senha;
+- `screens/unified/`: telas ativas de filmes, resenhas e cenas;
+- `components/FormModal.tsx`: formulários de criação e edição;
+- `supabase/migrations/`: estrutura segura do backend.

@@ -2,24 +2,24 @@
   "expo": {
     "name": "CineFy",
     "slug": "cinefy",
+    "scheme": "cinefy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-cinefy.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-cinefy.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#D98A9B"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon-cinefy.png",
+        "backgroundColor": "#D98A9B"
       },
-      "usesCleartextTraffic": true,
       "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
@@ -31,7 +31,8 @@
         "expo-image-picker",
         {
           "photosPermission": "O app precisa acessar suas fotos para você selecionar imagens.",
-          "cameraPermission": "O app precisa acessar sua câmera para tirar fotos."
+          "cameraPermission": "O app precisa acessar sua câmera para tirar fotos.",
+          "microphonePermission": false
         }
       ]
     ]

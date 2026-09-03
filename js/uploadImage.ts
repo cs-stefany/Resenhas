@@ -1,5 +1,4 @@
-import * as FileSystem from 'expo-file-system';
-import { decode } from 'base64-arraybuffer';
+import { File } from 'expo-file-system';
 import { supabase } from './supabase';
 import { Platform } from 'react-native';
 
@@ -43,14 +42,12 @@ export const uploadImage = async (
 
         let uploadData: ArrayBuffer;
 
-        // Lê o arquivo como base64
+        // Lê o arquivo diretamente pela API atual do Expo FileSystem.
         try {
             onProgress?.(25);
-            const base64 = await FileSystem.readAsStringAsync(uri, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
+            const file = new File(uri);
+            uploadData = await file.arrayBuffer();
             onProgress?.(50);
-            uploadData = decode(base64);
             onProgress?.(60);
         } catch (fsError: any) {
             // Fallback: tentar com fetch

@@ -1,5 +1,5 @@
 import { createDrawerNavigator, DrawerContentComponentProps, DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { StyleSheet } from "react-native";
 import { Filmes, Resenhas, Cenas } from "./unified";
 import Home from "./Home";
@@ -7,7 +7,7 @@ import React from "react";
 
 const Drawer = createDrawerNavigator();
 
-function CDrawerItem(props: { name: string; icon: string; navigation: any; state: any }) {
+function CDrawerItem(props: { name: string; icon: React.ComponentProps<typeof Icon>["name"]; navigation: any; state: any }) {
     return (
         <DrawerItem
             inactiveTintColor="#CD9CB2"
@@ -36,6 +36,7 @@ function CDrawerContent(props: DrawerContentComponentProps) {
 export default function Menu() {
     return (
         <Drawer.Navigator
+            id="MainDrawer"
             initialRouteName="Pagina Inicial"
             drawerContent={(props) => CDrawerContent(props)}
             screenOptions={{
