@@ -2,13 +2,13 @@
 export const traduzirErro = (mensagem: string): string => {
     const traducoes: { [key: string]: string } = {
         // Erros de autenticação
-        "Invalid login credentials": "Email ou senha incorretos.",
-        "Email not confirmed": "Email não confirmado. Verifique sua caixa de entrada.",
-        "Invalid email or password": "Email ou senha inválidos.",
+        "Invalid login credentials": "Nome de usuário ou senha incorretos.",
+        "Email not confirmed": "Não foi possível ativar esta conta.",
+        "Invalid email or password": "Nome de usuário ou senha inválidos.",
         "User not found": "Usuário não encontrado.",
-        "Email address is invalid": "Formato de email inválido.",
+        "Email address is invalid": "Nome de usuário inválido.",
         "Password should be at least 6 characters": "A senha deve ter pelo menos 6 caracteres.",
-        "User already registered": "Este email já está cadastrado.",
+        "User already registered": "Este nome de usuário já está em uso.",
         "Email rate limit exceeded": "Muitas tentativas. Aguarde alguns minutos.",
         "For security purposes, you can only request this once every 60 seconds": "Por segurança, aguarde 60 segundos para tentar novamente.",
 
@@ -23,8 +23,8 @@ export const traduzirErro = (mensagem: string): string => {
 
         // Erros de signup
         "Signup requires a valid password": "A senha é obrigatória para o cadastro.",
-        "Unable to validate email address: invalid format": "Formato de email inválido.",
-        "A user with this email address has already been registered": "Este email já está cadastrado.",
+        "Unable to validate email address: invalid format": "Nome de usuário inválido.",
+        "A user with this email address has already been registered": "Este nome de usuário já está em uso.",
 
         // Erros gerais
         "Request timeout": "Tempo esgotado. Tente novamente.",

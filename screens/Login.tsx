@@ -12,25 +12,22 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { isSupabaseConfigured, supabase } from '../js/supabase';
 import { useAlert } from '../contexts/AlertContext';
 import { traduzirErro } from '../js/tradutor';
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { nomeDeUsuarioValido, normalizarNomeDeUsuario, usuarioParaEmailInterno } from '../js/authIdentity';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
+    const [usuario, setUsuario] = useState('');
     const [senha, setSenha] = useState('');
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [recuperando, setRecuperando] = useState(false);
-    const { alert, showAlert } = useAlert();
+    const { alert } = useAlert();
     const navigation = useNavigation();
 
-    const emailNormalizado = email.trim().toLowerCase();
+    const usuarioNormalizado = normalizarNomeDeUsuario(usuario);
 
     const entrar = async () => {
         Keyboard.dismiss();
@@ -38,8 +35,8 @@ export default function Login() {
             alert('O CineFy ainda não está conectado ao servidor. Configure o Supabase para continuar.');
             return;
         }
-        if (!EMAIL_PATTERN.test(emailNormalizado)) {
-            alert('Digite um e-mail válido.');
+        if (!nomeDeUsuarioValido(usuarioNormalizado)) {
+            alert('Digite um nome de usuário válido.');
             return;
         }
         if (!senha) {
@@ -49,7 +46,7 @@ export default function Login() {
 
         setLoading(true);
         const { error } = await supabase.auth.signInWithPassword({
-            email: emailNormalizado,
+            email: usuarioParaEmailInterno(usuarioNormalizado),
             password: senha,
         });
         setLoading(false);
@@ -57,34 +54,6 @@ export default function Login() {
         if (error) {
             alert(traduzirErro(error.message));
         }
-    };
-
-    const recuperarSenha = async () => {
-        if (!isSupabaseConfigured) {
-            alert('O CineFy ainda não está conectado ao servidor. Configure o Supabase para continuar.');
-            return;
-        }
-        if (!EMAIL_PATTERN.test(emailNormalizado)) {
-            alert('Digite seu e-mail acima para recuperar a senha.');
-            return;
-        }
-
-        setRecuperando(true);
-        const { error } = await supabase.auth.resetPasswordForEmail(emailNormalizado, {
-            redirectTo: Linking.createURL('redefinir-senha'),
-        });
-        setRecuperando(false);
-
-        if (error) {
-            alert(traduzirErro(error.message));
-            return;
-        }
-
-        showAlert({
-            title: 'Confira seu e-mail',
-            message: 'Enviamos um link seguro para você criar uma nova senha. Se não encontrar, confira também a pasta de spam.',
-            buttons: [{ text: 'Entendi' }],
-        });
     };
 
     return (
@@ -109,20 +78,19 @@ export default function Login() {
                     <Text style={styles.subtitle}>Entre para continuar sua coleção.</Text>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>E-mail</Text>
+                        <Text style={styles.label}>Nome de usuário</Text>
                         <View style={styles.inputRow}>
-                            <Ionicons name="mail-outline" size={21} color="#8F6277" />
+                            <Ionicons name="person-outline" size={21} color="#8F6277" />
                             <TextInput
                                 style={styles.input}
-                                placeholder="voce@exemplo.com"
+                                placeholder="Seu usuário"
                                 placeholderTextColor="#A68B98"
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
+                                value={usuario}
+                                onChangeText={setUsuario}
                                 autoCapitalize="none"
                                 autoCorrect={false}
-                                textContentType="emailAddress"
-                                autoComplete="email"
+                                textContentType="username"
+                                autoComplete="username"
                                 returnKeyType="next"
                             />
                         </View>
@@ -160,19 +128,9 @@ export default function Login() {
                     </View>
 
                     <TouchableOpacity
-                        style={styles.forgotButton}
-                        onPress={recuperarSenha}
-                        disabled={loading || recuperando}
-                    >
-                        <Text style={styles.forgotText}>
-                            {recuperando ? 'Enviando link...' : 'Esqueci minha senha'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
                         style={[styles.primaryButton, loading && styles.disabledButton]}
                         onPress={entrar}
-                        disabled={loading || recuperando}
+                        disabled={loading}
                     >
                         {loading
                             ? <ActivityIndicator color="#FFFFFF" />
@@ -231,8 +189,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
     },
     input: { flex: 1, color: '#35252D', fontSize: 16, paddingVertical: 12 },
-    forgotButton: { alignSelf: 'flex-end', paddingVertical: 4, paddingLeft: 10 },
-    forgotText: { color: '#8F6277', fontWeight: '600' },
     primaryButton: {
         minHeight: 54,
         borderRadius: 27,

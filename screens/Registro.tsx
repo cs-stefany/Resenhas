@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -11,19 +11,18 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
 import { MaskedDateInput } from '../components';
 import { useAlert } from '../contexts/AlertContext';
 import { isSupabaseConfigured, supabase } from '../js/supabase';
 import { traduzirErro } from '../js/tradutor';
 import { isValidBrazilianDate } from '../js/validation';
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { nomeDeUsuarioValido, normalizarNomeDeUsuario, usuarioParaEmailInterno } from '../js/authIdentity';
 
 export default function Registro() {
+    const scrollRef = useRef<KeyboardAwareScrollView | null>(null);
     const [nome, setNome] = useState('');
-    const [email, setEmail] = useState('');
+    const [usuario, setUsuario] = useState('');
     const [datanasc, setDatanasc] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmacao, setConfirmacao] = useState('');
@@ -32,18 +31,22 @@ export default function Registro() {
     const { alert, showAlert } = useAlert();
     const navigation = useNavigation();
 
+    const manterCamposDeSenhaVisiveis = () => {
+        setTimeout(() => scrollRef.current?.scrollToEnd(true), 180);
+    };
+
     const cadastrar = async () => {
         if (!isSupabaseConfigured) {
             alert('O CineFy ainda não está conectado ao servidor. Configure o Supabase para continuar.');
             return;
         }
-        const emailNormalizado = email.trim().toLowerCase();
+        const usuarioNormalizado = normalizarNomeDeUsuario(usuario);
         if (nome.trim().length < 2) {
             alert('Digite seu nome.');
             return;
         }
-        if (!EMAIL_PATTERN.test(emailNormalizado)) {
-            alert('Digite um e-mail válido.');
+        if (!nomeDeUsuarioValido(usuarioNormalizado)) {
+            alert('O usuário deve ter entre 3 e 24 caracteres e usar apenas letras, números, ponto, hífen ou sublinhado.');
             return;
         }
         if (!isValidBrazilianDate(datanasc, false)) {
@@ -61,13 +64,13 @@ export default function Registro() {
 
         setLoading(true);
         const { data, error } = await supabase.auth.signUp({
-            email: emailNormalizado,
+            email: usuarioParaEmailInterno(usuarioNormalizado),
             password: senha,
             options: {
-                emailRedirectTo: Linking.createURL('confirmacao'),
                 data: {
                     nome: nome.trim(),
                     datanasc,
+                    usuario: usuarioNormalizado,
                 },
             },
         });
@@ -81,15 +84,15 @@ export default function Registro() {
         if (data.session) {
             showAlert({
                 title: 'Conta criada!',
-                message: 'Seu CineFy está pronto para usar.',
+                message: `Seu usuário é ${usuarioNormalizado}. Guarde seu usuário e sua senha para entrar novamente.`,
                 buttons: [{ text: 'Começar' }],
             });
             return;
         }
 
         showAlert({
-            title: 'Só falta confirmar',
-            message: 'Enviamos um link para o seu e-mail. Abra o link para ativar a conta e depois volte para entrar.',
+            title: 'Não foi possível entrar',
+            message: 'A conta foi criada, mas a sessão não foi iniciada. Volte ao login e tente entrar com seu usuário e senha.',
             buttons: [{
                 text: 'Voltar ao login',
                 onPress: () => navigation.navigate('Login' as never),
@@ -99,11 +102,16 @@ export default function Registro() {
 
     return (
         <KeyboardAwareScrollView
+            ref={scrollRef}
             style={styles.screen}
             contentContainerStyle={styles.content}
             enableOnAndroid
+            enableAutomaticScroll
+            enableResetScrollToCoords={false}
             keyboardShouldPersistTaps="handled"
-            extraScrollHeight={20}
+            keyboardDismissMode="on-drag"
+            extraHeight={110}
+            extraScrollHeight={110}
         >
             <View style={styles.brandRow}>
                 <Image source={require('../assets/avatar.png')} style={styles.logo as ImageStyle} />
@@ -127,17 +135,16 @@ export default function Registro() {
                     autoComplete="name"
                 />
 
-                <Text style={styles.label}>E-mail</Text>
+                <Text style={styles.label}>Nome de usuário</Text>
                 <TextInput
                     style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="voce@exemplo.com"
-                    keyboardType="email-address"
+                    value={usuario}
+                    onChangeText={setUsuario}
+                    placeholder="Ex.: stefany26"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    textContentType="emailAddress"
-                    autoComplete="email"
+                    textContentType="username"
+                    autoComplete="username-new"
                 />
 
                 <Text style={styles.label}>Data de nascimento</Text>
@@ -159,6 +166,7 @@ export default function Registro() {
                         autoCapitalize="none"
                         textContentType="newPassword"
                         autoComplete="new-password"
+                        onFocus={manterCamposDeSenhaVisiveis}
                     />
                     <TouchableOpacity onPress={() => setMostrarSenha((value) => !value)} hitSlop={10}>
                         <Ionicons
@@ -177,6 +185,7 @@ export default function Registro() {
                     placeholder="Digite a senha novamente"
                     secureTextEntry={!mostrarSenha}
                     autoCapitalize="none"
+                    onFocus={manterCamposDeSenhaVisiveis}
                     onSubmitEditing={cadastrar}
                 />
 
@@ -196,7 +205,7 @@ export default function Registro() {
 
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#DDB0C4' },
-    content: { flexGrow: 1, backgroundColor: '#FED2E5', paddingBottom: 32 },
+    content: { flexGrow: 1, backgroundColor: '#FED2E5', paddingBottom: 64 },
     brandRow: {
         flexDirection: 'row',
         alignItems: 'center',
