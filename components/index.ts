@@ -6,6 +6,7 @@ import ImageWithPlaceholder from "./ImageWithPlaceholder";
 import ProgressBar from "./ProgressBar";
 import SearchFilterBar from "./SearchFilterBar";
 import FormModal from "./FormModal";
+import SelectField from "./SelectField";
 
 export {
     Loading,
@@ -16,4 +17,5 @@ export {
     ProgressBar,
     SearchFilterBar,
     FormModal,
+    SelectField,
 };

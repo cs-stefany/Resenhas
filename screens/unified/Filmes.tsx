@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ImageStyle, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 
 import { supabase } from '../../js/supabase';
 import { useFormModal } from '../../contexts/FormModalContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Filme } from '../../model/Filme';
-import { Loading, ImageWithPlaceholder } from '../../components';
+import { Loading, ImageWithPlaceholder, SelectField } from '../../components';
 import SearchFilterBar from '../../components/SearchFilterBar';
 import style from '../../js/style';
 
@@ -131,20 +130,14 @@ const Filmes = () => {
     }
 
     const FilterDropdown = (
-        <View style={styles.filterDropdown}>
-            <View style={styles.pickerContainer}>
-                <Picker
-                    selectedValue={generoFilter}
-                    onValueChange={(value) => setGeneroFilter(value)}
-                    style={styles.picker}
-                    dropdownIconColor="#8F6277"
-                >
-                    {GENEROS.map((item) => (
-                        <Picker.Item key={item.value || 'todos'} label={item.label} value={item.value} />
-                    ))}
-                </Picker>
-            </View>
-        </View>
+        <SelectField
+            value={generoFilter}
+            options={GENEROS}
+            onValueChange={setGeneroFilter}
+            placeholder="Todos os gêneros"
+            title="Filtrar por gênero"
+            compact
+        />
     );
 
     return (
@@ -213,24 +206,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 20,
         paddingBottom: 40,
-    },
-    filterDropdown: {
-        minWidth: 100,
-    },
-    pickerContainer: {
-        backgroundColor: 'rgba(173, 126, 148, 0.3)',
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        height: 36,
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#CD9CB2',
-    },
-    picker: {
-        fontSize: 12,
-        color: '#8F6277',
-        height: 38,
-        width: 124,
     },
     emptyState: {
         flex: 1,

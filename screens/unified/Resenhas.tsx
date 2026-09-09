@@ -177,19 +177,23 @@ const Resenhas = () => {
                                 Todos
                             </Text>
                         </TouchableOpacity>
-                        {[1, 2, 3, 4, 5].map(star => (
-                            <TouchableOpacity
-                                key={star}
-                                style={[styles.starButton, estrelasFilter === star && styles.starButtonActive]}
-                                onPress={() => setEstrelasFilter(estrelasFilter === star ? null : star)}
-                            >
-                                <Ionicons
-                                    name="star"
-                                    size={14}
-                                    color={estrelasFilter === star ? '#FFFFFF' : '#FFD700'}
-                                />
-                            </TouchableOpacity>
-                        ))}
+                        {[1, 2, 3, 4, 5].map(star => {
+                            const isActive = estrelasFilter !== null && star <= estrelasFilter;
+
+                            return (
+                                <TouchableOpacity
+                                    key={star}
+                                    style={[styles.starButton, isActive && styles.starButtonActive]}
+                                    onPress={() => setEstrelasFilter(estrelasFilter === star ? null : star)}
+                                >
+                                    <Ionicons
+                                        name="star"
+                                        size={16}
+                                        color={isActive ? '#FFFFFF' : '#FFD700'}
+                                    />
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </View>
 
@@ -280,30 +284,31 @@ const styles = StyleSheet.create({
         borderBottomColor: '#DDB0C4',
     },
     starFilterRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 10,
     },
     filterLabel: {
         fontSize: 12,
         color: '#8F6277',
         fontWeight: '600',
-        marginRight: 8,
+        marginBottom: 8,
     },
     starFilter: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        width: '100%',
+        gap: 5,
     },
     starButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 10,
+        flex: 1,
+        paddingHorizontal: 6,
         paddingVertical: 6,
         borderRadius: 16,
         backgroundColor: 'rgba(173, 126, 148, 0.3)',
-        minWidth: 36,
+        minWidth: 0,
     },
     starButtonActive: {
         backgroundColor: '#8F6277',
@@ -334,9 +339,11 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
+        minWidth: 0,
         fontSize: 14,
         color: '#8F6277',
         paddingVertical: 0,
+        includeFontPadding: false,
     },
     addButton: {
         width: 42,

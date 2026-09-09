@@ -27,7 +27,7 @@ const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
                 placeholder={placeholder}
                 keyboardType="numeric"
                 style={[styles.input, style]}
-                placeholderTextColor="#999"
+                placeholderTextColor="#FFFFFF"
             />
         </View>
     );
@@ -41,13 +41,13 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     input: {
-        backgroundColor: 'rgba(173, 126, 148, 0.3)',
+        backgroundColor: '#AD7E94',
         paddingHorizontal: 15,
         paddingVertical: 10,
         borderRadius: 8,
         borderWidth: 2,
-        borderColor: '#CD9CB2',
-        color: '#000',
+        borderColor: '#8F6277',
+        color: '#FFFFFF',
         fontSize: 16,
     },
 });

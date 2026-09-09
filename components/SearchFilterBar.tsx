@@ -19,37 +19,41 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
 }) => {
     return (
         <View style={styles.container}>
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color="#8F6277" style={styles.searchIcon} />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder={placeholder}
-                    placeholderTextColor="#AD7E94"
-                    value={searchValue}
-                    onChangeText={onSearchChange}
-                />
+            <View style={styles.topRow}>
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search" size={20} color="#8F6277" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder={placeholder}
+                        placeholderTextColor="#AD7E94"
+                        value={searchValue}
+                        onChangeText={onSearchChange}
+                    />
+                </View>
+
+                <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
+                    <Ionicons name="add" size={28} color="#FFFFFF" />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.filterContainer}>
                 {filterComponent}
             </View>
-
-            <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
-                <Ionicons name="add" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        alignItems: 'center',
         backgroundColor: '#FFE1EE',
         paddingHorizontal: 12,
         paddingVertical: 10,
         borderBottomWidth: 2,
         borderBottomColor: '#DDB0C4',
+    },
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 10,
     },
     searchContainer: {
@@ -68,12 +72,15 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
+        minWidth: 0,
         fontSize: 14,
         color: '#8F6277',
         paddingVertical: 0,
+        includeFontPadding: false,
     },
     filterContainer: {
-        minWidth: 100,
+        width: '100%',
+        marginTop: 10,
     },
     addButton: {
         width: 44,

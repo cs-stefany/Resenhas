@@ -12,7 +12,6 @@ import {
 import Modal from 'react-native-modal';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useFormModal, EntityType } from '../contexts/FormModalContext';
@@ -27,6 +26,7 @@ import {
     StarRating,
     MaskedDateInput,
 } from './index';
+import SelectField from './SelectField';
 
 const { height } = Dimensions.get('window');
 
@@ -370,6 +370,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                 <Text style={styles.label}>Título *</Text>
                 <TextInput
                     placeholder="Digite o título"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -378,24 +379,20 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Gênero *</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={formData.genero || ''}
-                        onValueChange={(value) => updateField('genero', value)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Selecione um gênero..." value="" color="#777" />
-                        {GENEROS.map((item) => (
-                            <Picker.Item key={item.value} label={item.label} value={item.value} />
-                        ))}
-                    </Picker>
-                </View>
+                <SelectField
+                    value={formData.genero || ''}
+                    options={GENEROS}
+                    onValueChange={(value) => updateField('genero', value)}
+                    placeholder="Selecione um gênero..."
+                    title="Selecionar gênero"
+                />
             </View>
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Sinopse</Text>
                 <TextInput
                     placeholder="Digite a sinopse"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.sinopse || ''}
                     onChangeText={(text) => updateField('sinopse', text)}
                     style={[styles.input, styles.textArea]}
@@ -418,24 +415,23 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
         <>
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Filme *</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={formData.idFilme || '0'}
-                        onValueChange={(value) => updateField('idFilme', value)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Selecione um filme..." value="0" color="#777" />
-                        {filmes.map((filme: any) => (
-                            <Picker.Item key={filme.id} label={filme.titulo} value={filme.id} />
-                        ))}
-                    </Picker>
-                </View>
+                <SelectField
+                    value={formData.idFilme || '0'}
+                    options={[
+                        { label: 'Selecione um filme...', value: '0' },
+                        ...filmes.map((filme: any) => ({ label: filme.titulo, value: filme.id })),
+                    ]}
+                    onValueChange={(value) => updateField('idFilme', value)}
+                    placeholder="Selecione um filme..."
+                    title="Selecionar filme"
+                />
             </View>
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Título *</Text>
                 <TextInput
                     placeholder="Digite o título da resenha"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -446,6 +442,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                 <Text style={styles.label}>Texto *</Text>
                 <TextInput
                     placeholder="Digite sua resenha"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.texto || ''}
                     onChangeText={(text) => updateField('texto', text)}
                     style={[styles.input, styles.textArea]}
@@ -479,24 +476,23 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Filme *</Text>
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={formData.idFilme || '0'}
-                        onValueChange={(value) => updateField('idFilme', value)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Selecione um filme..." value="0" color="#777" />
-                        {filmes.map((filme: any) => (
-                            <Picker.Item key={filme.id} label={filme.titulo} value={filme.id} />
-                        ))}
-                    </Picker>
-                </View>
+                <SelectField
+                    value={formData.idFilme || '0'}
+                    options={[
+                        { label: 'Selecione um filme...', value: '0' },
+                        ...filmes.map((filme: any) => ({ label: filme.titulo, value: filme.id })),
+                    ]}
+                    onValueChange={(value) => updateField('idFilme', value)}
+                    placeholder="Selecione um filme..."
+                    title="Selecionar filme"
+                />
             </View>
 
             <View style={styles.fieldContainer}>
                 <Text style={styles.label}>Título *</Text>
                 <TextInput
                     placeholder="Digite o título"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.titulo || ''}
                     onChangeText={(text) => updateField('titulo', text)}
                     style={styles.input}
@@ -507,6 +503,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                 <Text style={styles.label}>Descrição *</Text>
                 <TextInput
                     placeholder="Descreva a cena"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.descricao || ''}
                     onChangeText={(text) => updateField('descricao', text)}
                     style={[styles.input, styles.textArea]}
@@ -518,6 +515,7 @@ const FormModal: React.FC<FormModalProps> = ({ onSave }) => {
                 <Text style={styles.label}>Observação</Text>
                 <TextInput
                     placeholder="Observações adicionais"
+                    placeholderTextColor="#FFFFFF"
                     value={formData.observacao || ''}
                     onChangeText={(text) => updateField('observacao', text)}
                     style={styles.input}
@@ -641,17 +639,6 @@ const styles = StyleSheet.create({
         borderColor: '#CD9CB2',
         color: '#000',
         fontSize: 15,
-    },
-    pickerContainer: {
-        backgroundColor: 'rgba(173, 126, 148, 0.3)',
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: '#CD9CB2',
-        overflow: 'hidden',
-    },
-    picker: {
-        color: '#35252D',
-        backgroundColor: 'transparent',
     },
     textArea: {
         minHeight: 80,
