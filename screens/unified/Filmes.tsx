@@ -39,8 +39,8 @@ const Filmes = () => {
     const [search, setSearch] = useState('');
     const [generoFilter, setGeneroFilter] = useState('');
 
-    const { openCreate, openEdit, revision } = useFormModal();
-    const { alert, confirmDelete } = useAlert();
+    const { openCreate, openEdit, revision, notifySaved } = useFormModal();
+    const { alert, confirm } = useAlert();
     const { session } = useAuth();
 
     useEffect(() => {
@@ -110,19 +110,54 @@ const Filmes = () => {
     }, [filmes, search, generoFilter]);
 
     const excluir = async (item: Filme) => {
-        confirmDelete(item.titulo || "este filme", async () => {
-            const { error } = await supabase
-                .from('filmes')
-                .delete()
-                .eq('id', item.id)
-                .eq('user_id', session?.user.id);
+        const userId = session?.user.id;
+        if (!userId) {
+            alert('Sua sessão expirou. Entre novamente para excluir.');
+            return;
+        }
 
-            if (error) {
-                alert("Erro ao excluir: " + error.message);
-            } else {
-                alert("Filme excluído com sucesso!");
-            }
-        });
+        const [resenhasResult, cenasResult] = await Promise.all([
+            supabase
+                .from('resenhas')
+                .select('*', { count: 'exact', head: true })
+                .eq('id_filme', item.id)
+                .eq('user_id', userId),
+            supabase
+                .from('cenas')
+                .select('*', { count: 'exact', head: true })
+                .eq('id_filme', item.id)
+                .eq('user_id', userId),
+        ]);
+
+        const hasExactCounts = !resenhasResult.error && !cenasResult.error;
+        const resenhasCount = resenhasResult.count ?? 0;
+        const cenasCount = cenasResult.count ?? 0;
+        const linkedDataWarning = hasExactCounts
+            ? `Também serão excluídas permanentemente ${resenhasCount} ${resenhasCount === 1 ? 'resenha' : 'resenhas'} e ${cenasCount} ${cenasCount === 1 ? 'cena' : 'cenas'} vinculadas.`
+            : 'Todas as resenhas e cenas vinculadas também serão excluídas permanentemente.';
+
+        confirm(
+            'Excluir filme e dados vinculados',
+            `Ao excluir "${item.titulo || 'este filme'}", o filme não poderá ser recuperado. ${linkedDataWarning} Deseja continuar?`,
+            async () => {
+                const { data, error } = await supabase
+                    .from('filmes')
+                    .delete()
+                    .eq('id', item.id)
+                    .eq('user_id', userId)
+                    .select('id');
+
+                if (error) {
+                    alert("Erro ao excluir: " + error.message);
+                } else if (!data?.length) {
+                    alert('O filme não foi encontrado ou já havia sido excluído.');
+                } else {
+                    setFilmes(prev => prev.filter(filme => filme.id !== item.id));
+                    notifySaved();
+                    alert("Filme excluído com sucesso!");
+                }
+            },
+        );
     };
 
     if (loading) {

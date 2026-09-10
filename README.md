@@ -4,7 +4,7 @@ Desenvolvi o CineFy como um acervo pessoal para quem gosta de cinema: cada usuá
 
 ## Testar no Android
 
-[Baixar o APK do CineFy](https://github.com/cs-stefany/Resenhas/releases/latest/download/CineFy-v1.2.0.apk)
+[Baixar o APK do CineFy](https://github.com/cs-stefany/Resenhas/releases/latest/download/CineFy-v1.2.1.apk)
 
 No celular Android, abra o link acima, baixe o arquivo e permita a instalação quando o sistema solicitar. O aplicativo é distribuído diretamente pelo GitHub, então o Android pode exibir um aviso sobre instalação de fonte externa.
 

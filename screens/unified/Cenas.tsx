@@ -130,15 +130,25 @@ const Cenas = () => {
 
     const excluir = async (item: Cena) => {
         confirmDelete(item.titulo || "esta cena", async () => {
-            const { error } = await supabase
+            const userId = session?.user.id;
+            if (!userId) {
+                alert('Sua sessão expirou. Entre novamente para excluir.');
+                return;
+            }
+
+            const { data, error } = await supabase
                 .from('cenas')
                 .delete()
                 .eq('id', item.id)
-                .eq('user_id', session?.user.id);
+                .eq('user_id', userId)
+                .select('id');
 
             if (error) {
                 alert("Erro ao excluir: " + error.message);
+            } else if (!data?.length) {
+                alert('A cena não foi encontrada ou já havia sido excluída.');
             } else {
+                setCenas(prev => prev.filter(cena => cena.id !== item.id));
                 alert("Cena excluída com sucesso!");
             }
         });

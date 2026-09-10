@@ -130,15 +130,25 @@ const Resenhas = () => {
 
     const excluir = async (item: Resenha) => {
         confirmDelete(item.titulo || "esta resenha", async () => {
-            const { error } = await supabase
+            const userId = session?.user.id;
+            if (!userId) {
+                alert('Sua sessão expirou. Entre novamente para excluir.');
+                return;
+            }
+
+            const { data, error } = await supabase
                 .from('resenhas')
                 .delete()
                 .eq('id', item.id)
-                .eq('user_id', session?.user.id);
+                .eq('user_id', userId)
+                .select('id');
 
             if (error) {
                 alert("Erro ao excluir: " + error.message);
+            } else if (!data?.length) {
+                alert('A resenha não foi encontrada ou já havia sido excluída.');
             } else {
+                setResenhas(prev => prev.filter(resenha => resenha.id !== item.id));
                 alert("Resenha excluída com sucesso!");
             }
         });
